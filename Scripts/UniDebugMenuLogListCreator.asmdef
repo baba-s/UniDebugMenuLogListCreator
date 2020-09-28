@@ -1,0 +1,16 @@
+{
+    "name": "UniDebugMenuLogListCreator",
+    "references": [
+        "GUID:c3d30b29344d736429b39f3ede8b8bd7",
+        "GUID:1272c0635ce8b0d4ebe37460906569cb"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
