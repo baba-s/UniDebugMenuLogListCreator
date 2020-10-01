@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +6,22 @@ using UnityEngine;
 
 namespace Kogane.DebugMenu
 {
+	public sealed class LogListTabData
+	{
+		public string Text       { get; }
+		public string SearchText { get; }
+
+		public LogListTabData
+		(
+			string text,
+			string searchText
+		)
+		{
+			Text       = text;
+			SearchText = searchText;
+		}
+	}
+
 	/// <summary>
 	/// ログ情報のリストを作成するクラス
 	/// </summary>
@@ -22,6 +38,7 @@ namespace Kogane.DebugMenu
 			WARNING,   // 警告
 			ERROR,     // エラー
 			EXCEPTION, // 例外
+			LENGTH,
 		}
 
 		//==============================================================================
@@ -161,6 +178,15 @@ namespace Kogane.DebugMenu
 		//==============================================================================
 		private static readonly List<LogData> m_logList = new List<LogData>(); // ログ情報のリスト
 
+		private static readonly string[] DEFAULT_TAG_NAME_LIST =
+		{
+			"全て",
+			"情報",
+			"警告",
+			"エラー",
+			"例外",
+		};
+
 		//==============================================================================
 		// 変数
 		//==============================================================================
@@ -172,13 +198,9 @@ namespace Kogane.DebugMenu
 		public override int Count => m_list.Length;
 
 		public override string[] TabNameList =>
-			new[]
-			{
-				"全て",
-				"情報",
-				"警告",
-				"エラー",
-			};
+			ExtraTagDatas != null
+				? DEFAULT_TAG_NAME_LIST.Concat( ExtraTagDatas.Select( x => x.Text ) ).ToArray()
+				: DEFAULT_TAG_NAME_LIST;
 
 		public override ActionData[] OptionActionList =>
 			new[]
@@ -186,8 +208,9 @@ namespace Kogane.DebugMenu
 				new ActionData( "クリア", () => Clear() ),
 			};
 
-		public int MaxLogCount              { get; set; } = 1000;
-		public int MaxCharacterCountPerLine { get; set; } = 120;
+		public int              MaxLogCount              { get; set; } = 1000;
+		public int              MaxCharacterCountPerLine { get; set; } = 120;
+		public LogListTabData[] ExtraTagDatas            { get; set; }
 
 		//==============================================================================
 		// 関数
@@ -235,12 +258,15 @@ namespace Kogane.DebugMenu
 		/// </summary>
 		protected override void DoCreate( ListCreateData data )
 		{
-			var tabIndex = data.TabIndex;
-			var tabType  = ( TabType ) tabIndex;
-			var isAll    = tabType == TabType.ALL;
+			var tabIndex            = data.TabIndex;
+			var tabType             = ( TabType ) tabIndex;
+			var isAll               = tabType == TabType.ALL;
+			var extraTagData        = ExtraTagDatas?.ElementAtOrDefault( tabIndex - ( int ) TabType.LENGTH );
+			var isExistExtraTagData = extraTagData != null;
+			var extraTagSearchText  = isExistExtraTagData ? extraTagData.SearchText : string.Empty;
 
 			m_list = m_logList
-					.Where( x => isAll || x.Type == tabType )
+					.Where( x => isAll || x.Type == tabType || isExistExtraTagData && x.FullCondition.Contains( extraTagSearchText ) )
 					.SelectMany( x => x.ToSimpleLogList( MaxCharacterCountPerLine ) )
 					.Where( x => data.IsMatch( x.FullCondition ) )
 					.Select( x => new ActionData( x.Message, () => OpenAdd( DMType.TEXT_TAB_6, new SimpleInfoCreator( x.ToString(), MaxCharacterCountPerLine ) ) ) )
